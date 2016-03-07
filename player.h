@@ -11,17 +11,22 @@ class Player {
 public:
     Player(Side side);
     ~Player();
+    void setBoard(Board *currstate);
+
+    int diffHeuristic(Board *currState, Side side);
+    int simpleHeuristic(Board *currState, Move *move, Side side);
     
     Move *doMove(Move *opponentsMove, int msLeft);
+    int considerMove(Board *currState, Move *move, Side currSide, int depth);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
     
-    // Save which side we are on
+    // Save which side we are on.
     Side mySide;
     
-    //board
-    Board board;
+    // Game board state.
+    Board *board;
 };
 
 #endif
