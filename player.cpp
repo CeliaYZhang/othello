@@ -8,7 +8,6 @@
 Player::Player(Side side) {
     // Will be set to true in test_minimax.cpp.
     testingMinimax = false;
-    Board *board = new Board();
     mySide = side;
 }
 
@@ -33,9 +32,13 @@ Player::~Player() {
 Move *Player::doMove(Move *opponentsMove, int msLeft) {
 	// update board for opponents move
 	if (mySide == WHITE) 
-	    doMove(opponentsMove, BLACK);
+	    board.doMove(opponentsMove, BLACK);
 	else
-	    doMove(opponentsMove, WHITE);
+	    board.doMove(opponentsMove, WHITE);
+	
+	// Check for no more valid moves
+	if (board.hasMoves(mySide))
+	    return NULL;  
 	
     // Heuristic function
     if (testingMinimax)

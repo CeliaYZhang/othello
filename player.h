@@ -19,6 +19,9 @@ public:
     
     // Save which side we are on
     Side mySide;
+    
+    //board
+    Board board;
 };
 
 #endif
