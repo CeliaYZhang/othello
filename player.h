@@ -18,12 +18,14 @@ public:
     
     Move *doMove(Move *opponentsMove, int msLeft);
     int considerMove(Board *currState, Move *move, Side currSide, int depth);
+    pair<int, Move*> minimax(Board *currState, Move *move, Side currSide, int depth);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
     
     // Save which side we are on.
     Side mySide;
+    Side opSide;
     
     // Game board state.
     Board *board;

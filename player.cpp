@@ -1,5 +1,7 @@
 #include "player.h"
 #include <iostream>
+#include <cstddef>
+#include <utility>
 
 using namespace std;
 
@@ -10,8 +12,11 @@ using namespace std;
  */
 Player::Player(Side side) {
     // Will be set to true in test_minimax.cpp.
-    testingMinimax = true;
+    testingMinimax = false;
     mySide = side;
+    opSide = WHITE;
+    if(mySide == WHITE)
+        opSide = BLACK;
     board = new Board();
 }
 
@@ -56,45 +61,98 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     // Minmax function
     if (testingMinimax)
     {
-        Move *bestMove = skip;
-        int bestScore = -64;
-        vector<Move*> moves = board->getMoves(mySide);
-        cerr << "Number of moves to consider is " << moves.size() << "\n";
-        for(int i = 0; i < (int)moves.size(); ++i) {
-            Board *copyBoard = board->copy();
-            int score = considerMove(copyBoard, moves[i], mySide, 2);
-            cerr << score << endl;
-            if(score > bestScore) {
-                bestScore = score;
-                bestMove = moves[i];
-            }
-        }
-        board->doMove(bestMove, mySide);
-        cerr << bestMove->getX() << " " << bestMove->getY() << "\n";
-        return bestMove;    
+        // Move *bestMove = skip;
+        // int bestScore = -100000;
+        // vector<Move*> moves = board->getMoves(mySide);
+        // cerr << "Number of moves to consider is " << moves.size() << "\n";
+        // for(int i = 0; i < (int)moves.size(); ++i) {
+        //     Board *copyBoard = board->copy();
+        //     int score = considerMove(copyBoard, moves[i], mySide, 2);
+        //     cerr << score << endl;
+        //     if(score > bestScore) {
+        //         bestScore = score;
+        //         bestMove = moves[i];
+        //     }
+        // }
+        pair<int, Move*> bestMove = minimax(board, skip, mySide, 2);
+        board->doMove(bestMove.second, mySide);
+        cerr << bestMove.second->getX() << " "
+             << bestMove.second->getY() << "\n";
+        return bestMove.second;    
     }
-    // Heuristic function
+    // Heuristic function (Notice that minimax for 1 level is the same
+    // as just testing for the Heuristic function.)
     else
     {
-        
+        pair<int, Move*> bestMove = minimax(board, skip, mySide, 1);
+        board->doMove(bestMove.second, mySide);
+        return bestMove.second;
     }
     return NULL;
 }
 
-int Player::considerMove(Board *currState, Move *move,
-                         Side currSide, int depth){
-    if(depth == 0){
-        currState->doMove(move, currSide);
-        return simpleHeuristic(currState, move, currSide);
+pair<int, Move*> Player::minimax(Board *currState, Move *move,
+                                 Side currSide, int depth){
+    vector<Move*> moves = currState->getMoves(currSide);
+    int numMoves = (int)moves.size();
+    if(depth == 0 || numMoves == 0){
+        if(currSide == mySide)
+            return make_pair(simpleHeuristic(currState, move, opSide), move);
+            //return make_pair(diffHeuristic(currState, opSide), move);
+        return make_pair(simpleHeuristic(currState, move, mySide), move);
+        //return make_pair(diffHeuristic(currState, mySide), move);
+    }
+    if(currSide == mySide){
+        int bestScore = -100000;
+        Move *bestMove = new Move(-1, -1);
+        for(int i = 0; i < numMoves; ++i){
+            Board *copyBoard = currState->copy();
+            copyBoard->doMove(moves[i], currSide);
+            pair<int, Move*> v = minimax(copyBoard, moves[i],
+                                         opSide, depth - 1);
+            if(v.first > bestScore){
+                bestScore = v.first;
+                bestMove = moves[i];
+            }
+            delete copyBoard;
+        }
+        return make_pair(bestScore, bestMove);
     }
     else{
-        currState->doMove(move, currSide);
-        int bestScore = 0;
+        int bestScore = 100000;
+        Move *bestMove = new Move(-1, -1);
+        for(int i = 0; i < numMoves; ++i){
+            Board *copyBoard = currState->copy();
+            pair<int, Move*> v = minimax(copyBoard, moves[i],
+                                         mySide, depth - 1);
+            if(v.first < bestScore){
+                bestScore = v.first;
+                bestMove = moves[i];
+            }
+            delete copyBoard;
+        }
+        return make_pair(bestScore, bestMove);
+    }
+}
+
+int Player::considerMove(Board *currState, Move *move,
+                         Side currSide, int depth){
+    currState->doMove(move, currSide);
+    if(depth == 1){
+        if(currSide != mySide)
+            //return simpleHeuristic(currState, move, currSide);
+            return -diffHeuristic(currState, currSide);
+        return diffHeuristic(currState, currSide);
+    }
+    else{
+        int bestScore = -100000;
         Side nxtSide = WHITE;
         if(currSide == WHITE)
             nxtSide = BLACK;
         
         vector<Move*> moves = currState->getMoves(nxtSide);
+        if(moves.size() == 0)
+            return simpleHeuristic(currState, move, currSide);
 
         for(int i = 0; i < (int)moves.size(); ++i) {
             //cerr << "Move: (" << moves[i]->getX() << ", "
@@ -103,8 +161,12 @@ int Player::considerMove(Board *currState, Move *move,
             Board *copyBoard = currState->copy();
             int score = considerMove(copyBoard, moves[i],
                                      nxtSide, depth - 1);
+            if(currSide != mySide)
+                score = -score;
+            cerr << score << endl;
             if(score > bestScore)
                 bestScore = score;
+            delete copyBoard;
         }
         return bestScore;
     }
@@ -121,8 +183,17 @@ int Player::diffHeuristic(Board *currState, Side side){
 int Player::simpleHeuristic(Board *currState, Move* move, Side side){
     int blacks = board->countBlack();
     int whites = board->countWhite();
-    int numMoves = (currState->getMoves(side)).size();
+    Side nxtSide = WHITE;
+    if(side == WHITE)
+        nxtSide = BLACK;
+    int numMoves = (currState->getMoves(nxtSide)).size();
     int cornerBonus = 0;
+
+    if(move == NULL){
+        if(side == WHITE)
+            return whites - blacks - numMoves * 100;
+        return blacks - whites - numMoves * 100;
+    }
 
     // Check if the move was a corner place.
     if(move->getX() == 0 && move->getY() == 0)
@@ -146,15 +217,23 @@ int Player::simpleHeuristic(Board *currState, Move* move, Side side){
 
     // Check if the move was one to corner place.
     if(move->getX() == 0 && (move->getY() == 1 || move->getY() == 6))
-        cornerBonus -= 300;
+        cornerBonus -= 400;
     if(move->getX() == 7 && (move->getY() == 1 || move->getY() == 6))
-        cornerBonus -= 300;
+        cornerBonus -= 400;
     if(move->getY() == 0 && (move->getX() == 1 || move->getX() == 6))
-        cornerBonus -= 300;
+        cornerBonus -= 400;
     if(move->getY() == 7 && (move->getX() == 1 ||  move->getX() == 6))
-        cornerBonus -= 300;
+        cornerBonus -= 400;
+    if(move->getX() == 1 && move->getY() == 1)
+        cornerBonus -= 400;
+    if(move->getX() == 1 && move->getY() == 6)
+        cornerBonus -= 400;
+    if(move->getX() == 6 && move->getY() == 1)
+        cornerBonus -= 400;
+    if(move->getX() == 6 && move->getY() == 6)
+        cornerBonus -= 400;
     
     if(side == WHITE)
-        return whites - blacks + numMoves * 100 + cornerBonus;
-    return blacks - whites + numMoves * 100 + cornerBonus;
+        return whites - blacks - numMoves * 100 + cornerBonus;
+    return blacks - whites - numMoves * 100 + cornerBonus;
 }
