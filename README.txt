@@ -11,10 +11,12 @@ following paragraph.
 
 Improvements:
 To make our AI tournament-worthy, we tried to make some changes
-to fix the minimax tree. However, we weren't able to get it working,
+to fix the minimax tree. At first, we weren't able to get it working,
 resulting in the minimax implementing losing to the ConstantTimePlayer
 most of the time when combining it with our heuristic. Thus, we could
 not add any of the modifications to do with the minimax. However, we
 tweaked our heuristic so that it could defeat ConstantTimePlayer a majority
-of the time. 
+of the time. Finally, we debugged our minimax tree, and got it to defeat
+ConstantTimePlayer consistantly for depth = 4. We combined this with
+our heuristic to finish our algorithm. 
 
