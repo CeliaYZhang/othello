@@ -12,7 +12,7 @@ using namespace std;
  */
 Player::Player(Side side) {
     // Will be set to true in test_minimax.cpp.
-    testingMinimax = false;
+    testingMinimax = true;
     mySide = side;
     opSide = WHITE;
     if(mySide == WHITE)
@@ -74,7 +74,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         //         bestMove = moves[i];
         //     }
         // }
-        pair<int, Move*> bestMove = minimax(board, skip, mySide, 3);
+        pair<int, Move*> bestMove = minimax(board, skip, mySide, 4);
         board->doMove(bestMove.second, mySide);
         cerr << bestMove.second->getX() << " "
              << bestMove.second->getY() << "\n";
@@ -114,8 +114,12 @@ pair<int, Move*> Player::minimax(Board *currState, Move *move,
                                          opSide, depth - 1);
             if(v.first > bestScore){
                 bestScore = v.first;
+                Move *tmp = bestMove;
                 bestMove = moves[i];
+                delete tmp;
             }
+            else
+                delete moves[i];
             delete copyBoard;
         }
         return make_pair(bestScore, bestMove);
@@ -125,11 +129,14 @@ pair<int, Move*> Player::minimax(Board *currState, Move *move,
         Move *bestMove = new Move(-1, -1);
         for(int i = 0; i < numMoves; ++i){
             Board *copyBoard = currState->copy();
+            copyBoard->doMove(moves[i], currSide);
             pair<int, Move*> v = minimax(copyBoard, moves[i],
                                          mySide, depth - 1);
             if(v.first < bestScore){
                 bestScore = v.first;
+                Move *tmp = bestMove;
                 bestMove = moves[i];
+                delete tmp;
             }
             delete copyBoard;
         }
@@ -188,7 +195,10 @@ int Player::simpleHeuristic(Board *currState, Move* move, Side side){
     Side nxtSide = WHITE;
     if(side == WHITE)
         nxtSide = BLACK;
-    int numMoves = (currState->getMoves(nxtSide)).size();
+    vector<Move*> moves = currState->getMoves(nxtSide);
+    int numMoves = moves.size();
+    for(int i = 0; i < numMoves; i++)
+        delete moves[i];
     int cornerBonus = 0;
 
     if(move == NULL){
@@ -199,41 +209,41 @@ int Player::simpleHeuristic(Board *currState, Move* move, Side side){
 
     // Check if the move was a corner place.
     if(move->getX() == 0 && move->getY() == 0)
-        cornerBonus += 1000;
+        cornerBonus += 5000;
     if(move->getX() == 0 && move->getY() == 7)
-        cornerBonus += 1000;
+        cornerBonus += 5000;
     if(move->getX() == 7 && move->getY() == 0)
-        cornerBonus += 1000;
+        cornerBonus += 5000;
     if(move->getX() == 7 && move->getY() == 7)
-        cornerBonus += 1000;
+        cornerBonus += 5000;
 
     // Check if the move was an edge place.
     if(move->getX() == 0 && move->getY() != 0 && move->getY() != 7)
-        cornerBonus += 200;
+        cornerBonus += 100;
     if(move->getX() == 7 && move->getY() != 0 && move->getY() != 7)
-        cornerBonus += 200;
+        cornerBonus += 100;
     if(move->getY() == 0 && move->getX() != 0 && move->getX() != 7)
-        cornerBonus += 200;
+        cornerBonus += 100;
     if(move->getY() == 7 && move->getX() != 0 && move->getX() != 7)
-        cornerBonus += 200;
+        cornerBonus += 100;
 
     // Check if the move was one to corner place.
     if(move->getX() == 0 && (move->getY() == 1 || move->getY() == 6))
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getX() == 7 && (move->getY() == 1 || move->getY() == 6))
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getY() == 0 && (move->getX() == 1 || move->getX() == 6))
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getY() == 7 && (move->getX() == 1 ||  move->getX() == 6))
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getX() == 1 && move->getY() == 1)
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getX() == 1 && move->getY() == 6)
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getX() == 6 && move->getY() == 1)
-        cornerBonus -= 400;
+        cornerBonus -= 500;
     if(move->getX() == 6 && move->getY() == 6)
-        cornerBonus -= 400;
+        cornerBonus -= 500;
 
     if(side == mySide){
         if(mySide == WHITE)
