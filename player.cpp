@@ -74,7 +74,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         //         bestMove = moves[i];
         //     }
         // }
-        pair<int, Move*> bestMove = minimax(board, skip, mySide, 2);
+        pair<int, Move*> bestMove = minimax(board, skip, mySide, 3);
         board->doMove(bestMove.second, mySide);
         cerr << bestMove.second->getX() << " "
              << bestMove.second->getY() << "\n";
@@ -101,6 +101,8 @@ pair<int, Move*> Player::minimax(Board *currState, Move *move,
             //return make_pair(diffHeuristic(currState, opSide), move);
         return make_pair(simpleHeuristic(currState, move, mySide), move);
         //return make_pair(diffHeuristic(currState, mySide), move);
+        
+        // return make_pair(simpleHeuristic(currState, move, mySide), move);
     }
     if(currSide == mySide){
         int bestScore = -100000;
@@ -232,8 +234,19 @@ int Player::simpleHeuristic(Board *currState, Move* move, Side side){
         cornerBonus -= 400;
     if(move->getX() == 6 && move->getY() == 6)
         cornerBonus -= 400;
+
+    if(side == mySide){
+        if(mySide == WHITE)
+            return whites - blacks - numMoves * 100 + cornerBonus;
+        return blacks - whites - numMoves * 100 + cornerBonus;
+    }
+    else{
+        if(mySide == WHITE)
+            return whites - blacks + numMoves * 100 - cornerBonus;
+        return blacks - whites + numMoves * 100 - cornerBonus;
+    }
     
-    if(side == WHITE)
-        return whites - blacks - numMoves * 100 + cornerBonus;
-    return blacks - whites - numMoves * 100 + cornerBonus;
+    // if(side == WHITE)
+    //     return whites - blacks - numMoves * 100 + cornerBonus;
+    // return blacks - whites - numMoves * 100 + cornerBonus;
 }
